@@ -207,9 +207,7 @@ agentic run "Run echo hello and report the output"
 
 ## Architecture
 
-> The rendered image below is optional. If `docs/assets/architecture.png` does not exist yet, the Mermaid diagram and ASCII fallback describe the same architecture.
-
-![Agentic Native Stack Architecture](docs/assets/architecture.png)
+> The Mermaid diagram and ASCII fallback below describe the architecture. A rendered architecture image may be added at `docs/assets/architecture.png` later.
 
 ```mermaid
 flowchart TD
