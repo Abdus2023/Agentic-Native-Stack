@@ -1,0 +1,1 @@
+{"$schema":"https://json-schema.org/draft/2020-12/schema","title":"SessionCreateRequest","type":"object","required":["kind"],"properties":{"kind":{"type":"string","enum":["local_pty","mock"]},"shell":{"type":["string","null"]},"rows":{"type":"integer","minimum":1},"cols":{"type":"integer","minimum":1}}}

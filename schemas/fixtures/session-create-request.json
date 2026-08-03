@@ -1,0 +1,1 @@
+{"v":1,"id":"req-001","method":"session.create","params":{"kind":"local_pty","shell":"/bin/bash","rows":24,"cols":80}}
