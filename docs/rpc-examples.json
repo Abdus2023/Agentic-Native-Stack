@@ -1,0 +1,13 @@
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "method": "session/create",
+  "params": {
+    "spec": {
+      "kind": "local_pty",
+      "command": "/bin/zsh",
+      "rows": 32,
+      "cols": 120
+    }
+  }
+}

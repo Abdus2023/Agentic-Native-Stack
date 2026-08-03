@@ -1,0 +1,12 @@
+# Rust core
+/rust/agentic-core/crates/agentic-pty/       @pty-team
+/rust/agentic-core/crates/agentic-ssh/       @ssh-team
+/rust/agentic-core/crates/agentic-vte/       @vte-team
+/rust/agentic-core/crates/agentic-agent-core/ @agent-team
+
+# TypeScript runtime
+/typescript/agentic-runtime/packages/        @runtime-team
+
+# Security-sensitive
+/rust/agentic-core/crates/agentic-agent-core/src/permission.rs @security-team
+/rust/agentic-core/crates/agentic-daemon/src/admin.rs          @security-team

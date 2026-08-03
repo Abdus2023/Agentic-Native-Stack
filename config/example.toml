@@ -1,0 +1,33 @@
+[daemon]
+ipc_socket_path = "/tmp/agentic-native.sock"
+websocket_bind = "127.0.0.1:8787"
+ssh_server_bind = "127.0.0.1:2222"
+default_shell = "/bin/zsh"
+max_sessions = 64
+max_panes_per_session = 16
+snapshot_interval_ms = 2500
+
+[permissions]
+default_policy = "ask"
+auto_allow_read = true
+auto_allow_write = false
+auto_allow_network = false
+require_confirmation_for = [
+  "shell_exec",
+  "file_write",
+  "ssh_connect",
+  "network_access",
+]
+
+[memory]
+backend = "sqlite"
+path = "~/.agentic/memory.db"
+graph_enabled = true
+decay_enabled = true
+decay_half_life_ms = 1209600000
+
+[agent]
+default_provider = "anthropic"
+max_turns = 32
+auto_compact = true
+effort_level = "balanced"

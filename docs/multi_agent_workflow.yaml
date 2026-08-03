@@ -1,0 +1,56 @@
+name: fix-failing-tests
+description: Diagnose and fix failing Rust tests.
+permissions:
+  default: ask
+  allow:
+    - file_read
+    - git_status
+    - git_diff
+    - terminal_snapshot
+tasks:
+  - id: reproduce
+    agent: tester
+    prompt: |
+      Run `cargo test` and identify failing tests.
+    tools:
+      - shell_exec
+      - terminal_snapshot
+
+  - id: diagnose
+    agent: analyst
+    needs:
+      - reproduce
+    prompt: |
+      Analyze the failing tests and identify root cause.
+    tools:
+      - file_read
+      - file_search
+
+  - id: patch
+    agent: editor
+    needs:
+      - diagnose
+    isolated_worktree: true
+    prompt: |
+      Implement the smallest correct fix.
+    tools:
+      - file_read
+      - file_write
+      - git_diff
+
+  - id: verify
+    agent: tester
+    needs:
+      - patch
+    isolated_worktree: inherit
+    prompt: |
+      Run tests again and confirm the fix.
+    tools:
+      - shell_exec
+
+  - id: summarize
+    agent: writer
+    needs:
+      - verify
+    prompt: |
+      Summarize the failure, fix, and verification result.

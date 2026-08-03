@@ -1,0 +1,8 @@
+{
+  "method": "privacy.forget",
+  "params": {
+    "userId": "user_01JZ...",
+    "scope": "all",
+    "preserveAuditForLegalHold": true
+  }
+}
