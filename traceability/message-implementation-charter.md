@@ -104,3 +104,51 @@ The supplied code blocks contain Markdown rendering artifacts in Rust identifier
 The local repository contains pre-existing scaffold implementations for PTY, event, session, daemon, and protocol modules that do not match the complete v0.2.0 file layout described in the message. No blind overwrite was performed.
 
 The local environment has no `cargo` executable, so the stated release gate could not be executed. The v0.2.0 milestone is therefore **not locally verified**.
+
+## v0.3.0 Terminal Intelligence Scope
+
+The supplied follow-up establishes v0.2.0 as approved in the conversation narrative and defines v0.3.0 as a consumer layer over raw `terminal.output` bytes.
+
+### `agentic-vte` responsibilities
+
+- VTE escape-sequence parsing
+- terminal grid state
+- OSC 133 command-boundary detection
+- prompt detection
+- exit-code extraction
+- semantic event emission
+- alternate-screen tracking
+- scrollback
+
+### `agentic-vte` non-responsibilities
+
+- PTY allocation or I/O
+- session authority
+- permissions
+- transport or IPC
+- agent reasoning
+- memory persistence
+
+### Semantic event registry
+
+The event contract is to remain in `agentic-protocol`, including typed session identity access, semantic event names, wire representations, validation, and compatibility. The proposed semantic events are `command.started`, `command.completed`, `prompt.detected`, `output.line`, `grid.updated`, `alternate_screen.entered`, and `alternate_screen.exited`.
+
+### v0.3.0 implementation phases
+
+1. VTE parser
+2. Grid state
+3. Command detection
+4. Semantic event emission
+5. Integration
+
+### Pre-implementation artifacts
+
+- typed session identity accessor or typed event envelope;
+- protocol-owned semantic event registry;
+- versioned semantic event schemas under `schemas/events/`;
+- semantic-event compatibility fixtures;
+- deterministic replay and golden terminal fixtures as follow-up items.
+
+### Traceability status
+
+This is architectural scope and review guidance. No `agentic-vte` implementation files were added from this message. The local repository still has not been verified against the v0.2.0 narrative release gate.
