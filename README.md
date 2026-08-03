@@ -1,5 +1,15 @@
 # agentic-native-stack
 
+[![CI](https://img.shields.io/github/actions/workflow/status/agentic-native/agentic-native-stack/ci.yml?branch=main&label=CI)](https://github.com/agentic-native/agentic-native-stack/actions)
+[![Rust](https://img.shields.io/badge/rust-1.82%2B-orange.svg)](https://www.rust-lang.org/)
+[![Node](https://img.shields.io/badge/node-22%2B-green.svg)](https://nodejs.org/)
+[![pnpm](https://img.shields.io/badge/pnpm-9%2B-blue.svg)](https://pnpm.io/)
+[![License](https://img.shields.io/badge/license-MIT%20OR%20Apache--2.0-blue.svg)](#license)
+[![Docs](https://img.shields.io/badge/docs-latest-blue.svg)](agentic-native-stack.md)
+[![Status](https://img.shields.io/badge/status-specification%20%26%20blueprints-yellow.svg)](#project-maturity)
+
+<!-- Add release and versioned documentation badges once tagged releases exist. -->
+
 An agentic-native terminal execution stack built around a **Rust core** and a **TypeScript runtime layer**.
 
 This project rebuilds the traditional terminal pipeline:
@@ -21,6 +31,63 @@ Agent Surface
   → Structured Events
   → Agent Memory / Tools / Permissions
   → Audit / Telemetry / Observability
+```
+
+---
+
+## Table of Contents
+
+- [Architecture](#architecture)
+- [Why?](#why)
+- [Quick Start (5 Minutes)](#quick-start-5-minutes)
+- [Project Maturity](#project-maturity)
+- [Non-Goals](#non-goals)
+- [Features at a Glance](#features-at-a-glance)
+- [Highlights](#highlights)
+- [Repository Layout](#repository-layout)
+- [Core Components](#core-components)
+- [Design Principles](#design-principles)
+- [Getting Started](#getting-started)
+- [Permission Model](#permission-model)
+- [Event Model](#event-model)
+- [Security](#security)
+- [Observability](#observability)
+- [Deployment](#deployment)
+- [Documentation](#documentation)
+- [Architecture Decision Records](#architecture-decision-records)
+- [FAQ](#faq)
+- [Versioning Policy](#versioning-policy)
+- [Contributing](#contributing)
+- [Community](#community)
+- [Roadmap](#roadmap)
+- [Inspiration](#inspiration)
+- [License](#license)
+
+---
+
+## Architecture
+
+> The optional image is not required; the Mermaid and ASCII diagrams below describe the architecture without it.
+
+![Agentic Native Stack Architecture](docs/assets/architecture.png)
+
+```mermaid
+flowchart TD
+    Clients[Clients<br/>Browser / Editor / CLI / API]
+    TS[TypeScript Runtime<br/>protocol / server / terminal / agent-runtime / plugin-sdk]
+    Daemon[Rust Daemon<br/>session / agent-core / memory / event / protocol]
+    PTY[agentic-pty]
+    SSH[agentic-ssh]
+    VTE[agentic-vte]
+    OS[Operating System / Remote Host<br/>PTY / Shell / Applications / sshd]
+    Clients --> TS
+    TS --> Daemon
+    Daemon --> PTY
+    Daemon --> SSH
+    Daemon --> VTE
+    PTY --> OS
+    SSH --> OS
+    VTE --> Daemon
 ```
 
 ---
@@ -59,6 +126,95 @@ Agents need more:
 - safe human oversight.
 
 `agentic-native-stack` makes terminal sessions first-class agent objects.
+
+---
+
+## Quick Start (5 Minutes)
+
+This quick start describes the intended developer workflow for the reference implementation.
+
+### 1. Install prerequisites
+
+```bash
+# Rust
+rustup update stable
+
+# Node + pnpm
+corepack enable
+```
+
+### 2. Build the workspace
+
+```bash
+cargo build --workspace
+pnpm -C typescript/agentic-runtime install
+pnpm -C typescript/agentic-runtime build
+```
+
+### 3. Start the daemon
+
+```bash
+cargo run --bin agentic-daemon -- --config config/dev.toml
+```
+
+### 4. Create and attach a session
+
+```bash
+agentic session new --shell /bin/zsh
+agentic attach sess_01JZ...
+```
+
+### 5. Run an agent task
+
+```bash
+agentic run "Run echo hello and report the output"
+```
+
+---
+
+## Project Maturity
+
+**Current stage:** architecture specification and implementation blueprints.
+
+This repository currently provides the architecture specification, crate and package layout, protocol and event models, security and permission model, deployment and operations guidance, and implementation blueprints for the Rust daemon and TypeScript runtime.
+
+The project is **pre-1.0**. APIs, protocols, configuration formats, and crate boundaries may change before stabilization.
+
+---
+
+## Non-Goals
+
+This project is **not**:
+
+- a general-purpose terminal emulator intended to replace Alacritty, WezTerm, Kitty, or Ghostty as a daily GPU terminal;
+- a shell replacement for bash, zsh, fish, or PowerShell;
+- a model provider or LLM inference engine;
+- a generic RPA system for GUI automation;
+- a replacement for CI platforms such as GitHub Actions or GitLab CI;
+- a production workflow engine for arbitrary business processes;
+- a hosted SaaS product by itself, although it can be used to build one.
+
+The focus is the **agent-native execution layer** between agents, terminals, shells, remote hosts, and auditable system actions.
+
+---
+
+## Features at a Glance
+
+| Capability | Description | Primary Layer |
+|---|---|---|
+| PTY management | Cross-platform pseudo-terminal creation, resize, async drain | Rust |
+| SSH execution | Client/server SSH channels, remote PTY, connection pooling | Rust |
+| VTE parsing | Terminal escape parsing, grid state, shadow parser | Rust |
+| Session multiplexing | Detachable sessions, panes, snapshots, reattachment | Rust |
+| Agent runtime | Tool-calling agent loop, providers, orchestration | Rust + TypeScript |
+| Permission engine | Policy evaluation, approval prompts, fail-closed behavior | Rust |
+| Memory system | Episodic, semantic, procedural, graph memory, decay | Rust |
+| Event system | Typed events, replay buffer, projections, audit stream | Rust |
+| Terminal UI | xterm.js integration and rehydration | TypeScript |
+| Plugin SDK | Tools, permission policies, decorators, memory sources | TypeScript |
+| Workflows | Task graphs, approvals, retries, compensation | Rust + TypeScript |
+| Observability | Logs, metrics, traces, recordings, forensic export | Rust + TypeScript |
+| Multi-tenancy | Tenant isolation, quotas, metering, admin APIs | Rust + TypeScript |
 
 ---
 
@@ -177,6 +333,70 @@ agentic-native-stack/
     test.sh
     bench.sh
     release.sh
+```
+
+---
+
+## Workspace Dependency Diagram
+
+### Rust Crate Dependencies
+
+```mermaid
+flowchart TD
+    event[agentic-event]
+    protocol[agentic-protocol]
+    pty[agentic-pty]
+    vte[agentic-vte]
+    tunnel[agentic-tunnel]
+    ssh[agentic-ssh]
+    session[agentic-session]
+    memory[agentic-memory]
+    agent[agentic-agent-core]
+    daemon[agentic-daemon]
+    event --> pty
+    event --> vte
+    event --> tunnel
+    event --> ssh
+    event --> session
+    event --> memory
+    event --> agent
+    event --> daemon
+    protocol --> pty
+    protocol --> vte
+    protocol --> tunnel
+    protocol --> ssh
+    protocol --> session
+    protocol --> memory
+    protocol --> agent
+    protocol --> daemon
+    pty --> ssh
+    tunnel --> ssh
+    pty --> session
+    ssh --> session
+    vte --> session
+    tunnel --> session
+    session --> agent
+    memory --> agent
+    session --> daemon
+    agent --> daemon
+    memory --> daemon
+```
+
+### TypeScript Package Dependencies
+
+```mermaid
+flowchart TD
+    protocol[@agentic/protocol]
+    server[@agentic/server]
+    terminal[@agentic/terminal]
+    runtime[@agentic/agent-runtime]
+    sdk[@agentic/plugin-sdk]
+    protocol --> server
+    protocol --> terminal
+    protocol --> runtime
+    protocol --> sdk
+    server --> terminal
+    runtime --> sdk
 ```
 
 ---
@@ -532,6 +752,82 @@ It includes:
 
 ---
 
+## Architecture Decision Records
+
+Important design decisions are recorded as ADRs under `docs/adr/`.
+
+| ADR | Title |
+|---|---|
+| [ADR-0001](docs/adr/0001-rust-core.md) | Use Rust for core I/O and security boundaries |
+| [ADR-0002](docs/adr/0002-typescript-runtime.md) | Use TypeScript for runtime orchestration and plugins |
+| [ADR-0003](docs/adr/0003-shadow-parser.md) | Parse terminal output with a Rust-side shadow parser |
+| [ADR-0004](docs/adr/0004-permission-enforcement-in-rust.md) | Enforce permissions authoritatively in Rust |
+| [ADR-0005](docs/adr/0005-graph-memory.md) | Use graph-aware memory with decay and provenance |
+
+---
+
+## FAQ
+
+### Why Rust + TypeScript?
+
+Rust is used for safety-critical and performance-sensitive components such as PTY management, SSH, terminal parsing, session multiplexing, permission enforcement, and audit storage. TypeScript is used for the plugin SDK, xterm.js integration, HTTP/WebSocket server glue, editor and web UI integration, and agent workflow scripting.
+
+### How does this differ from tmux?
+
+`tmux` is a terminal multiplexer for humans. This stack also multiplexes sessions, but makes them understandable and controllable by agents through structured events, permission-gated tools, memory, audit logs, workflow orchestration, snapshot/rehydrate, and machine-readable command boundaries. tmux can run inside this stack as a normal terminal application.
+
+### How does this differ from WezTerm or Ghostty?
+
+WezTerm and Ghostty are terminal emulators focused on rendering, input, GPU acceleration, and user experience. This project is not primarily a terminal emulator. It is an **agent-native execution stack** that may use terminal rendering surfaces such as xterm.js, editor panels, or CLI clients.
+
+The stack borrows ideas from terminal emulators, especially VTE parsing and multiplexing, but its center of gravity is agent orchestration, permissions, tool execution, observability, remote execution, session replay, and memory.
+
+### Is this a terminal emulator?
+
+Partially, but not in the traditional sense. It includes VTE parsing, grid state, snapshots, shell integration, and xterm.js rendering. It is not intended to compete directly with daily-driver terminal emulators; the rendering surface is one client of the stack, not the core product.
+
+### Does this replace SSH?
+
+No. The stack can act as an SSH client or server component and interoperate with existing SSH infrastructure, including OpenSSH. It adds agent-oriented capabilities such as session reuse, structured events, permission gates, audit trails, remote agent RPC, and snapshot-aware sessions.
+
+### How do agents execute commands safely?
+
+Tool calls are validated against a schema, classified by risk, checked by the permission engine, optionally presented for human approval, executed in a controlled environment, and recorded in the audit log. High-risk actions fail closed if the permission engine is unavailable.
+
+### Can I use only part of the stack?
+
+Yes. The architecture is modular. For example, you could adopt only the PTY layer, VTE shadow parser, session multiplexer, permission model, event system, or TypeScript terminal runtime.
+
+### Is this production ready?
+
+Not yet. The project is in the specification and blueprint stage. Implementations should be validated, tested, and security-reviewed before production deployment.
+
+---
+
+## Versioning Policy
+
+This project follows [Semantic Versioning](https://semver.org/).
+
+```text
+MAJOR.MINOR.PATCH
+```
+
+- **MAJOR** changes may break APIs, protocols, configuration, or storage formats.
+- **MINOR** changes add functionality in a backward-compatible way.
+- **PATCH** changes contain backward-compatible fixes.
+
+Before `1.0.0`, breaking changes may occur in minor releases. The wire protocol includes an explicit version field:
+
+```json
+{
+  "v": 1
+}
+```
+
+Protocol changes follow compatibility rules documented in the full specification.
+
+---
+
 ## Contributing
 
 Contributions are welcome.
@@ -557,6 +853,15 @@ fix(ssh): close channel after exit status
 docs(cookbook): add cargo test permission recipe
 test(vte): add split UTF-8 regression test
 ```
+
+---
+
+## Community
+
+- GitHub Issues: bug reports and feature requests
+- GitHub Discussions: questions, ideas, and community support
+- RFCs: major design proposals
+- Security reports: private disclosure via `SECURITY.md`
 
 ---
 

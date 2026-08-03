@@ -1,0 +1,1 @@
+{"v":1,"id":"req-000","result":{"protocolVersion":1,"daemonVersion":"0.2.0","capabilities":["session.local_pty","terminal.stream","terminal.resize"]}}

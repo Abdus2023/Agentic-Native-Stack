@@ -1,0 +1,1 @@
+{"$schema":"https://json-schema.org/draft/2020-12/schema","title":"PermissionRequest","type":"object","required":["permission","decision"],"properties":{"permission":{"type":"string"},"decision":{"type":"string","enum":["allow","deny","ask","allow_once","allow_for_session","sandbox"]}}}
