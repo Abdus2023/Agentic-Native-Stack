@@ -1,0 +1,1 @@
+{"v":1,"method":"event","params":{"eventType":"terminal.output","payload":{"sessionId":"sess-001","data":"hello\r\n"}}}

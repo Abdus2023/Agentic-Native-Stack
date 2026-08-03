@@ -1,0 +1,1 @@
+{"v":1,"id":"req-002","method":"terminal.input","params":{"sessionId":"sess-001","data":"echo hello\n"}}
