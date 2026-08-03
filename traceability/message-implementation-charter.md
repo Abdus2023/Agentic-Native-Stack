@@ -152,3 +152,58 @@ The event contract is to remain in `agentic-protocol`, including typed session i
 ### Traceability status
 
 This is architectural scope and review guidance. No `agentic-vte` implementation files were added from this message. The local repository still has not been verified against the v0.2.0 narrative release gate.
+
+## v0.3.0 Protocol, VTE, and Event Pipeline Corpus
+
+The supplied continuation defines the v0.3.0 progression after the execution-kernel baseline:
+
+1. Protocol stabilization with typed event envelopes and semantic event registry.
+2. `agentic-vte` parser skeleton with grid, cursor, attributes, OSC handling, and semantic conversion.
+3. Golden terminal fixture framework.
+4. Cursor pending-wrap and extended SGR hardening.
+5. Primary/alternate screen and scrollback separation.
+6. Streaming OSC and OSC 133 semantic refinement.
+7. Grid delta events and EventBus bridge.
+8. PTY → VTE → Event end-to-end proof.
+
+### Protocol additions
+
+The proposed `agentic-protocol` event surface includes:
+
+- `TerminalEventType`;
+- `SemanticEventType`;
+- unified `EventType`;
+- generic `TypedEventEnvelope<T>`;
+- `EventSession` session/sequence access;
+- terminal output, command, prompt, line-output, and grid payload types;
+- versioned semantic event schemas and compatibility fixtures.
+
+### VTE responsibilities
+
+`agentic-vte` is defined as a pure interpretation layer consuming terminal output bytes. It owns VTE parsing, grid state, SGR attributes, OSC 133 shell integration, prompt/command detection, semantic event generation, alternate-screen handling, scrollback, grid deltas, and causal event context. It does not own PTY allocation, sessions, permissions, IPC, agent reasoning, or memory persistence.
+
+### Event and ordering model
+
+The later corrections define `TerminalEvent` with sequence, timestamp, screen mode, cursor snapshot, and semantic kind. Sequence numbers are assigned when events are emitted at mutation time rather than when drained. Grid changes are coalesced into `GridDelta` batches, and the default EventBus overflow policy is `DropGridOnly`, preserving semantic events under pressure.
+
+### OSC model
+
+The `vte` crate owns OSC framing. `OscDecoder` owns semantic interpretation. OSC 133 markers are refined into prompt and command lifecycle events with metadata merging; OSC 7 retains the raw URI and optionally exposes a local `PathBuf`; malformed payload tests are required. The payload accumulator is documented as reserved for future raw-stream processing rather than active duplicate framing.
+
+### Grid model
+
+The terminal state is separated into primary screen, alternate screen, and scrollback buffer. DEC modes `?47`, `?1047`, and `?1049`, cursor save/restore, primary-only scrollback, alternate-screen isolation, resize behavior, pending-wrap semantics, wide-character edge handling, and extended SGR colors are specified.
+
+### Golden and end-to-end validation
+
+Golden fixtures cover shell output, colors, OSC 133, Unicode, wide characters, empty input, alternate screen, wrapping, extended colors, and isolation. The v0.3.0 E2E proof validates semantic events, grid deltas, cursor context, monotonic sequences, causal ordering, and replay determinism.
+
+## v0.3.1 and v0.4.0 Guidance
+
+The message recommends a v0.3.1 Event Model Freeze before remote execution. Candidate frozen types are `TerminalEvent`, `TerminalEventKind`, `GridDelta`, `GridDeltaEvent`, `ProtocolEvent`, and `OverflowPolicy`, with versioned envelopes or non-exhaustive enums considered for compatibility.
+
+The proposed v0.4.0 milestone is Secure Remote Execution with `agentic-ssh`, remote PTY management, host identity verification, credential isolation, capability separation, and replay-safe remote audit events. The stated security gates include credential handles instead of raw secrets, explicit host fingerprints/trust state, separate observe/write/execute capabilities, and host/session/actor/sequence-aware audit records.
+
+## Source and Repository Status
+
+These v0.3.0/v0.4.0 materials are recorded as architectural and implementation guidance. No VTE source, fixture, schema, or E2E implementation was copied from this message because the supplied blocks contain rendering artifacts and successive partial revisions. The local repository has not been verified against the narrative claims that v0.3.0 is complete.
