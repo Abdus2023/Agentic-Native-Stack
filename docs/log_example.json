@@ -1,0 +1,10 @@
+{
+  "level": "info",
+  "target": "agentic_agent_core",
+  "fields": {
+    "message": "tool invocation completed",
+    "tool": "shell_exec",
+    "duration_ms": 431,
+    "session_id": "sess_01JZ..."
+  }
+}

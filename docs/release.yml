@@ -1,0 +1,35 @@
+# Source: agentic-native-stack.md
+# Context: RP.2 CI Workflow Example
+# Extraction ID: CODE-121
+# Knowledge Links: KI-181
+# Status: scaffolded
+
+name: Release
+on:
+  push:
+    tags:
+      - "v*"
+jobs:
+  build:
+    strategy:
+      matrix:
+        target:
+          - x86_64-unknown-linux-gnu
+          - aarch64-unknown-linux-gnu
+          - x86_64-apple-darwin
+          - aarch64-apple-darwin
+          - x86_64-pc-windows-msvc
+    runs-on: ${{ contains(matrix.target, 'apple') && 'macos-latest' || contains(matrix.target, 'windows') && 'windows-latest' || 'ubuntu-latest' }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+      - name: Build
+        run: cargo build --release --target ${{ matrix.target }}
+      - name: Package
+        run: ./scripts/package.sh ${{ matrix.target }}
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: agentic-${{ matrix.target }}
+          path: dist/

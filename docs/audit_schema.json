@@ -1,0 +1,23 @@
+{
+  "eventId": "evt_01JZ...",
+  "timestampMs": 1769900000000,
+  "actor": {
+    "type": "agent",
+    "id": "agent_01JZ..."
+  },
+  "action": "tool.invoke",
+  "tool": "shell_exec",
+  "sessionId": "sess_01JZ...",
+  "permission": {
+    "decision": "allow_once",
+    "riskLevel": "high"
+  },
+  "resource": {
+    "cwd": "/repo",
+    "command": "cargo test"
+  },
+  "result": {
+    "status": "success",
+    "exitCode": 0
+  }
+}
