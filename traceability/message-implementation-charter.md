@@ -207,3 +207,60 @@ The proposed v0.4.0 milestone is Secure Remote Execution with `agentic-ssh`, rem
 ## Source and Repository Status
 
 These v0.3.0/v0.4.0 materials are recorded as architectural and implementation guidance. No VTE source, fixture, schema, or E2E implementation was copied from this message because the supplied blocks contain rendering artifacts and successive partial revisions. The local repository has not been verified against the narrative claims that v0.3.0 is complete.
+
+## v0.3.1 Event Model Freeze and v0.4.0 Secure Remote Execution Corpus
+
+The supplied continuation records the following intended evolution:
+
+### v0.3.1 Event Model Freeze
+
+- `TerminalEventKind`, `GridDelta`, `EventCause`, `EventSource`, and `OverflowPolicy` are marked non-exhaustive where extension is expected.
+- `TerminalEvent` receives an envelope version, sequence, timestamp, screen mode, cursor snapshot, causal origin, and kind.
+- `GridDeltaEvent` carries causal origin.
+- Event priorities preserve semantic/security events over rendering deltas under backpressure.
+
+### v0.4.0 Secure Remote Execution gates
+
+- Credential isolation through opaque `CredentialHandle` values.
+- Host identity binding through verified fingerprints and explicit trust states.
+- Capability separation for observation, input, command execution, and remote-state modification.
+- Replay-safe audit records carrying session, host, sequence, timestamp, actor, action, capability, decision, and result.
+
+### SSH implementation sequence captured
+
+1. `agentic-ssh` transport skeleton.
+2. Host target/verified identity split and fingerprint-bound trust store.
+3. Trust-store hardening: async access, TOFU atomicity, transactional persistence, fingerprint parsing/normalization, schema migration, revocation metadata, and transition enforcement.
+4. SSH transport backend with enforced connection state machine, backend/authenticator abstractions, channel lifecycle, and capability-bound sessions.
+5. Remote PTY forwarding and `agentic-vte` TerminalEvent bridging.
+6. Capability-gated operations and audit integration.
+7. E2E audited remote execution proof.
+8. Lifecycle and audit hardening.
+
+### Security and lifecycle invariants
+
+- Identity verification precedes authentication.
+- Authentication precedes session establishment.
+- Session validity precedes capability checks.
+- Capability checks precede remote operations.
+- Credential material remains internal to the credential/authentication boundary.
+- Trust mutations preserve memory/durable-state consistency on failure.
+- PTY close drops input ownership before awaiting forwarder shutdown.
+- Remote terminal events carry session-scoped ordering metadata.
+- Unauthorized actions produce negative audit evidence.
+
+### Review status recorded in the source narrative
+
+The source narrative marks v0.3.1 and v0.4.0 as approved/complete after successive review rounds. This is preserved as conversation provenance only. The local repository does not contain the complete `agentic-vte`/`agentic-ssh` source sets described in the message and cannot be locally validated because `cargo` is unavailable.
+
+### Deferred observations
+
+- shutdown timeout audit events;
+- synchronized remote session state;
+- unified audit/terminal event sequencing;
+- command duration metadata;
+- crash simulation for trust persistence;
+- durable security-event storage;
+- real SSH library backend in place of placeholders.
+
+No VTE or SSH implementation files were scaffolded from this message because the supplied source is a long sequence of partial revisions with rendering corruption and does not constitute a single clean repository-ready file set.
