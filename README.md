@@ -5,7 +5,7 @@
 [![Node](https://img.shields.io/badge/node-22%2B-green.svg)](https://nodejs.org/)
 [![pnpm](https://img.shields.io/badge/pnpm-9%2B-blue.svg)](https://pnpm.io/)
 [![License](https://img.shields.io/badge/license-MIT%20OR%20Apache--2.0-blue.svg)](#license)
-[![Docs](https://img.shields.io/badge/docs-latest-blue.svg)](agentic-native-stack.md)
+[![Docs](https://img.shields.io/badge/docs-latest-blue.svg)](docs/agentic-native-stack.md)
 [![Status](https://img.shields.io/badge/status-specification%20%26%20blueprints-yellow.svg)](#project-maturity)
 
 <!--
@@ -726,7 +726,7 @@ WantedBy=default.target
 The full specification is available in:
 
 ```text
-agentic-native-stack.md
+docs/agentic-native-stack.md
 ```
 
 It includes:

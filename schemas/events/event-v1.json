@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://agentic-native.dev/schemas/events/event-v1.json",
+  "title": "AgenticEventEnvelope",
+  "type": "object",
+  "required": ["eventId", "eventType", "eventVersion", "timestampMs", "source", "payload"],
+  "properties": {
+    "eventId": {"type": "string"},
+    "eventType": {"type": "string"},
+    "eventVersion": {"type": "integer", "minimum": 1},
+    "timestampMs": {"type": "integer", "minimum": 0},
+    "monotonicNs": {"type": "string"},
+    "tenantId": {"type": ["string", "null"]},
+    "sessionId": {"type": ["string", "null"]},
+    "source": {"type": "object", "required": ["component", "instanceId"], "properties": {"component": {"type": "string"}, "instanceId": {"type": "string"}}},
+    "payload": {"type": "object"}
+  }
+}

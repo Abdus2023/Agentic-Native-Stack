@@ -1,0 +1,17 @@
+[daemon]
+listen = "127.0.0.1:7777"
+
+[session]
+default_shell = "/bin/bash"
+max_sessions = 100
+
+[security]
+policy_mode = "enforce"
+audit_enabled = true
+
+[memory]
+backend = "sqlite"
+
+[logging]
+level = "info"
+format = "json"
