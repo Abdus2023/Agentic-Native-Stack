@@ -16,6 +16,7 @@ class BootstrapResult:
     trusted: bool
     skills: tuple[str, ...]
     reason: str
+    registry: SkillRegistry | None = None
 
 
 class Bootstrap:
@@ -63,7 +64,7 @@ class Bootstrap:
         PolicyEngine()
         manifest = self.repo_root / "skills" / "manifest.json"
         if not manifest.exists():
-            return BootstrapResult(generation, True, registry.names(), "repository-declared runtime reconstructed")
+            return BootstrapResult(generation, True, registry.names(), "repository-declared runtime reconstructed", registry)
         try:
             data = json.loads(manifest.read_text(encoding="utf-8"))
             entries = data["skills"]
@@ -95,4 +96,4 @@ class Bootstrap:
         except (OSError, KeyError, TypeError, ValueError, ImportError, AttributeError, json.JSONDecodeError) as exc:
             return BootstrapResult(generation, False, (), f"skill bootstrap failed: {exc}")
 
-        return BootstrapResult(generation, True, registry.names(), "repository-declared runtime reconstructed")
+        return BootstrapResult(generation, True, registry.names(), "repository-declared runtime reconstructed", registry)
