@@ -42,6 +42,17 @@ def test_journal_detects_truncated_or_malformed_tail(tmp_path: Path) -> None:
         journal.read()
 
 
+def test_blank_tail_record_is_corruption(tmp_path: Path) -> None:
+    path = tmp_path / "journal.jsonl"
+    journal = Journal(path)
+    journal.append("RUN_CREATED", run_id="r1", generation="g1", task="demo")
+    with path.open("a", encoding="utf-8") as handle:
+        handle.write("\n")
+
+    with pytest.raises(JournalIntegrityError, match="blank journal record"):
+        journal.read()
+
+
 def test_append_refuses_to_continue_after_corruption(tmp_path: Path) -> None:
     path = tmp_path / "journal.jsonl"
     journal = Journal(path)
@@ -50,3 +61,15 @@ def test_append_refuses_to_continue_after_corruption(tmp_path: Path) -> None:
 
     with pytest.raises(JournalIntegrityError):
         journal.append("PLAN_ACCEPTED", run_id="r1", generation="g1")
+
+
+def test_append_flushes_to_stable_storage(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    calls: list[int] = []
+    import ourob.journal as journal_module
+
+    real_fsync = journal_module.os.fsync
+    monkeypatch.setattr(journal_module.os, "fsync", lambda fd: (calls.append(fd), real_fsync(fd))[1])
+
+    Journal(tmp_path / "journal.jsonl").append("RUN_CREATED", run_id="r1", generation="g1", task="demo")
+
+    assert calls
