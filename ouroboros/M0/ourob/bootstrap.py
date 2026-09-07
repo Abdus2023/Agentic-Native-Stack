@@ -6,7 +6,6 @@ import json
 from pathlib import Path
 
 from .generation import repository_generation
-from .journal import Journal
 from .policy import PolicyEngine
 from .skills import SkillRegistry, filesystem_skills
 
@@ -32,12 +31,21 @@ class Bootstrap:
         if not constitution.exists() or not gates.exists():
             return BootstrapResult(generation, False, (), "bootstrap trust inputs are missing")
         try:
-            json.loads(constitution.read_text(encoding="utf-8"))
-            json.loads(gates.read_text(encoding="utf-8"))
+            constitution_data = json.loads(constitution.read_text(encoding="utf-8"))
+            gates_data = json.loads(gates.read_text(encoding="utf-8"))
         except (OSError, json.JSONDecodeError) as exc:
             return BootstrapResult(generation, False, (), f"invalid bootstrap trust input: {exc}")
+        if not isinstance(constitution_data, dict) or constitution_data.get("schema") != "ourob.constitution.v1":
+            return BootstrapResult(generation, False, (), "unsupported constitution schema")
+        if not isinstance(gates_data, dict) or gates_data.get("schema") != "ourob.gates.v1":
+            return BootstrapResult(generation, False, (), "unsupported gate schema")
+        if constitution_data.get("mode") != "fail_closed":
+            return BootstrapResult(generation, False, (), "constitution is not fail_closed")
+        if not isinstance(gates_data.get("gates"), list) or not gates_data["gates"]:
+            return BootstrapResult(generation, False, (), "no verification gates declared")
 
-        registry = filesystem_skills(self.repo_root)
+        registry: SkillRegistry = filesystem_skills(self.repo_root)
+        PolicyEngine()
         manifest = self.repo_root / "skills" / "manifest.json"
         if manifest.exists():
             try:
