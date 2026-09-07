@@ -32,26 +32,34 @@ class SkillRegistry:
     def execute(self, action: Action) -> Observation:
         skill = self._skills.get(action.skill)
         if skill is None:
-            return Observation(action.id, False, None, f"unknown skill: {action.skill}")
+            return Observation(action.id, False, "", None, f"unknown skill: {action.skill}")
         if action.kind not in skill.kinds:
-            return Observation(action.id, False, None, f"skill does not support {action.kind}")
+            return Observation(action.id, False, "", None, f"skill does not support {action.kind}")
         try:
-            return Observation(action.id, True, skill.handler(action), "")
-        except Exception as exc:  # boundary converts adapter failure into evidence
-            return Observation(action.id, False, None, f"{type(exc).__name__}: {exc}")
+            return Observation(action.id, True, "", skill.handler(action), None)
+        except Exception as exc:
+            return Observation(action.id, False, "", None, f"{type(exc).__name__}: {exc}")
 
 
 def filesystem_skills(repo_root: Path) -> SkillRegistry:
+    root = repo_root.resolve()
     registry = SkillRegistry()
 
+    def safe_target(action: Action) -> tuple[Path, Path]:
+        relative = Path(str(action.arguments["path"]))
+        target = (root / relative).resolve()
+        try:
+            relative_resolved = target.relative_to(root)
+        except ValueError as exc:
+            raise ValueError("path escapes repository root") from exc
+        return target, relative_resolved
+
     def read(action: Action) -> str:
-        return (repo_root / str(action.arguments["path"])).read_text(encoding="utf-8")
+        target, _ = safe_target(action)
+        return target.read_text(encoding="utf-8")
 
     def write(action: Action) -> str:
-        relative = Path(str(action.arguments["path"]))
-        target = (repo_root / relative).resolve()
-        if repo_root.resolve() not in target.parents and target != repo_root.resolve():
-            raise ValueError("path escapes repository root")
+        target, relative = safe_target(action)
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_text(str(action.arguments.get("content", "")), encoding="utf-8")
         return relative.as_posix()
