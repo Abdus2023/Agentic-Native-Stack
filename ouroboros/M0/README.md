@@ -60,6 +60,22 @@ Verification evidence is serialized completely in the capture event so a crashed
 
 Repeated mutation after `OBSERVED` also emits a new durable `AUTHORIZATION_GRANTED` event before execution. Recovery therefore never interprets `ACTION_EXECUTED` as implicit authorization.
 
+## M1.4 — Journal durability contract
+
+The journal append operation is serialized with an inter-process exclusive lock on POSIX platforms. Each append:
+
+1. acquires the append lock;
+2. validates the complete existing chain before choosing its sequence and predecessor digest;
+3. appends exactly one canonical JSON record;
+4. flushes the file buffer; and
+5. calls `fsync` before releasing the lock.
+
+A blank or malformed record is corruption, not an ignorable tail. Recovery and subsequent appends therefore fail closed rather than silently skipping damaged history.
+
+The journal's hash chain provides **integrity evidence**, not independent authenticity: an actor capable of rewriting the entire journal can recompute the chain. A future anchored journal root or external trust store is required for tamper resistance against such an actor.
+
+On platforms without the required inter-process locking primitive, append fails closed rather than pretending that concurrent append serialization exists.
+
 ## Required M0 proof
 
 1. Cold bootstrap from repository state.
@@ -75,6 +91,6 @@ Repeated mutation after `OBSERVED` also emits a new durable `AUTHORIZATION_GRANT
 
 ## M1 direction
 
-M1 extends the in-process lifecycle with durable journal replay and crash recovery. M1.3 establishes the authority boundary: recovery may reconstruct only state that is supported by explicit durable authorization/evidence events; it may never manufacture authorization, verification, or promotion from informational observations.
+M1 extends the in-process lifecycle with durable journal replay and crash recovery. M1.3 establishes the authority boundary and M1.4 establishes append durability; neither treats a hash chain as an authenticity anchor.
 
 This M0 artifact is intentionally placed under the existing Agentic-Native-Stack repository as an architecture/implementation seed; it is not yet the executable package until the implementation slice is committed.
