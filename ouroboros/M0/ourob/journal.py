@@ -9,7 +9,10 @@ from dataclasses import asdict, is_dataclass
 from datetime import datetime, timezone
 from hashlib import sha256
 from pathlib import Path
-from typing import Any, Iterator
+from typing import Any, Iterator, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from .trust import JournalTrustAnchor
 
 try:
     import fcntl
@@ -92,6 +95,14 @@ class Journal:
         with self.path.open(encoding="utf-8") as handle:
             records = self._read_handle(handle)
         self.validate(records)
+        return records
+
+    def read_trusted(self, anchor: "JournalTrustAnchor") -> list[dict[str, Any]]:
+        """Read only after ordinary integrity and an external checkpoint both pass."""
+        records = self.read()
+        from .trust import verify_trust_anchor
+
+        verify_trust_anchor(records, anchor)
         return records
 
     @staticmethod
