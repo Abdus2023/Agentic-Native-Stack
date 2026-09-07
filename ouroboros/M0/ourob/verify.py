@@ -1,12 +1,13 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from hashlib import sha256
 import subprocess
 import sys
 from pathlib import Path
 
 from .generation import repository_generation
-from .model import VerificationResult
+from .model import VerificationResult, VerificationStatus
 
 
 @dataclass(frozen=True)
@@ -24,7 +25,7 @@ class VerificationReport:
 
     @property
     def passed(self) -> bool:
-        return bool(self.results) and all(r.status == "PASS" for r in self.results)
+        return bool(self.results) and all(r.status is VerificationStatus.PASS for r in self.results)
 
 
 DEFAULT_GATES = (
@@ -44,27 +45,20 @@ class Verifier:
         results: list[VerificationResult] = []
         for gate in self.gates:
             try:
-                completed = subprocess.run(
-                    gate.command,
-                    cwd=self.repo_root,
-                    capture_output=True,
-                    text=True,
-                    timeout=120,
-                    check=False,
-                )
+                completed = subprocess.run(gate.command, cwd=self.repo_root, capture_output=True, text=True, timeout=120, check=False)
             except FileNotFoundError as exc:
-                status = "BLOCKED" if gate.required else "NOT_RUN"
-                results.append(VerificationResult(gate.name, status, generation, epoch, str(exc)))
-                continue
+                status = VerificationStatus.BLOCKED if gate.required else VerificationStatus.NOT_RUN
+                message = str(exc)
             except subprocess.TimeoutExpired as exc:
-                results.append(VerificationResult(gate.name, "FAIL", generation, epoch, f"timeout: {exc}"))
-                continue
-            status = "PASS" if completed.returncode == 0 else "FAIL"
-            detail = (completed.stdout + completed.stderr).strip()
-            results.append(VerificationResult(gate.name, status, generation, epoch, detail))
+                status = VerificationStatus.FAIL
+                message = f"timeout: {exc}"
+            else:
+                status = VerificationStatus.PASS if completed.returncode == 0 else VerificationStatus.FAIL
+                message = (completed.stdout + completed.stderr).strip()
+            evidence_id = sha256(f"{generation}\0{epoch}\0{gate.name}\0{status}\0{message}".encode()).hexdigest()
+            results.append(VerificationResult(gate.name, status, evidence_id, generation, epoch, message))
 
-        # Evidence is valid only if the repository did not mutate during verification.
         final_generation = repository_generation(self.repo_root).id
         if final_generation != generation:
-            results = [VerificationResult(r.gate, "STALE", generation, epoch, "repository changed during verification") for r in results]
+            results = [VerificationResult(r.gate, VerificationStatus.STALE, r.evidence_id, generation, epoch, "repository changed during verification") for r in results]
         return VerificationReport(generation, epoch, tuple(results))
