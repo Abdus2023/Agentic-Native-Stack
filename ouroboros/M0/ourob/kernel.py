@@ -51,13 +51,14 @@ class Kernel:
             transition(run, RunState.BLOCKED)
             raise RuntimeError("run generation changed before authorization")
         transition(run, RunState.AUTHORIZED)
-        self.journal.append(Event("AUTHORIZATION_GRANTED", run.id, None, run.generation, {}))
+        self.journal.append(Event("AUTHORIZATION_GRANTED", run.id, None, run.generation, {"scope": "run"}))
 
     def execute(self, run: Run, action: Action) -> Observation:
         if run.state not in {RunState.AUTHORIZED, RunState.OBSERVED}:
             raise RuntimeError(f"mutation gateway requires AUTHORIZED/OBSERVED run, got {run.state}")
         if run.state is RunState.OBSERVED:
             transition(run, RunState.AUTHORIZED)
+            self.journal.append(Event("AUTHORIZATION_GRANTED", run.id, action.id, run.generation, {"scope": "action", "reason": "next-action"}))
         self.evidence = None
         self.journal.append(Event("ACTION_PROPOSED", run.id, action.id, run.generation, {"kind": action.kind, "skill": action.skill}))
         decision = self.policy.evaluate(action)
@@ -95,11 +96,12 @@ class Kernel:
         )
         self.journal.append(Event("VERIFICATION_STARTED", run.id, None, report.generation, {"epoch": report.epoch, "gate_set_digest": gate_contract_digest}))
         for result in report.results:
-            self.journal.append(Event("GATE_RESULT", run.id, None, result.generation, {"gate": result.gate, "status": result.status, "evidence_id": result.evidence_id, "epoch": result.epoch}))
+            self.journal.append(Event("GATE_RESULT", run.id, None, result.generation, {"gate": result.gate, "status": result.status.value, "evidence_id": result.evidence_id, "epoch": result.epoch, "message": result.message}))
         if report.generation != run.generation or not report.passed or not self.evidence.passed:
             self.evidence = None
             transition(run, RunState.FAILED)
         else:
+            self.journal.append(Event("VERIFICATION_EVIDENCE_CAPTURED", run.id, None, self.evidence.generation, self.evidence.to_record()))
             transition(run, RunState.VERIFIED)
         return report.results
 
@@ -118,5 +120,5 @@ class Kernel:
         )
         if not decision.allowed:
             raise RuntimeError(decision.reason)
-        self.journal.append(Event("PROMOTION_AUTHORIZED", run.id, None, run.generation, {"reason": decision.reason}))
-        self.journal.append(Event("PROMOTED", run.id, None, run.generation, {}))
+        self.journal.append(Event("PROMOTION_AUTHORIZED", run.id, None, run.generation, {"evidence_digest": evidence.digest, "gate_set_digest": evidence.gate_set_digest, "reason": decision.reason}))
+        self.journal.append(Event("PROMOTED", run.id, None, run.generation, {"evidence_digest": evidence.digest}))
