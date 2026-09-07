@@ -25,6 +25,8 @@ class PromotionAuthority:
             return PromotionDecision(False, "evidence belongs to another run")
         if not evidence.results:
             return PromotionDecision(False, "no verification evidence")
+        if not evidence.integrity_valid():
+            return PromotionDecision(False, "verification evidence digest is invalid")
         if evidence.generation != run.generation or evidence.generation != current:
             return PromotionDecision(False, "evidence generation is stale")
         if evidence.epoch != run.verification_epoch:
@@ -35,4 +37,4 @@ class PromotionAuthority:
             return PromotionDecision(False, "repository generation changed before promotion")
         transition(run, RunState.PROMOTABLE)
         transition(run, RunState.PROMOTED)
-        return PromotionDecision(True, "immutable verification evidence authorizes promotion")
+        return PromotionDecision(True, "integrity-checked verification evidence authorizes promotion")
