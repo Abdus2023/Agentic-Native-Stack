@@ -88,7 +88,30 @@ The anchor binds:
 
 A whole-history rewrite, truncation before the checkpoint, or generation mismatch is rejected. The runtime does **not** create, rotate, or replace an anchor during recovery. Anchor provisioning and storage are therefore part of the deployment trust boundary, not repository-derived authority.
 
-This is a checkpoint authenticity boundary, not a complete key-management system. If an attacker can also replace the external anchor, the anchor provides no protection; M1.6 can add signed checkpoints/key lifecycle as the next trust layer.
+This is a checkpoint authenticity boundary, not a complete key-management system. If an attacker can also replace the external anchor, the anchor provides no protection.
+
+## M1.6 — Signed checkpoints and trust-key lifecycle
+
+M1.6 adds Ed25519-signed checkpoint envelopes. Private signing keys remain external to repository state; OUROBOROS receives only externally provisioned public keys for verification.
+
+A signed checkpoint covers, canonically and together:
+
+1. checkpoint schema version;
+2. signature algorithm;
+3. key identifier;
+4. journal sequence;
+5. journal digest; and
+6. repository generation.
+
+The trust store has explicit key states:
+
+- `ACTIVE` — may authenticate current checkpoints;
+- `RETIRED` — retained for historical verification but not intended for new checkpoint authorization; and
+- `REVOKED` — cannot authenticate checkpoints.
+
+Trust-store epochs prevent silent rollback. Rotation requires a new key identifier at exactly the next epoch. Unknown key identifiers and algorithms fail closed. The runtime has no operation that generates, installs, or replaces the root trust store during recovery.
+
+The signing primitive is delegated to an external Ed25519 implementation (`cryptography`); OUROBOROS does not implement cryptography itself.
 
 ## Required M0 proof
 
@@ -105,6 +128,6 @@ This is a checkpoint authenticity boundary, not a complete key-management system
 
 ## M1 direction
 
-M1 extends the in-process lifecycle with durable journal replay and crash recovery. M1.3 establishes the authority boundary, M1.4 establishes append durability, and M1.5 establishes an external checkpoint trust boundary.
+M1 extends the in-process lifecycle with durable journal replay and crash recovery. M1.3 establishes the authority boundary, M1.4 establishes append durability, M1.5 establishes an external checkpoint trust boundary, and M1.6 adds cryptographically signed checkpoints with explicit key lifecycle semantics.
 
 This M0 artifact is intentionally placed under the existing Agentic-Native-Stack repository as an architecture/implementation seed; it is not yet the executable package until the implementation slice is committed.
