@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from .evidence import VerificationEvidence, gate_set_digest
+from .evidence import VerificationEvidence
 from .generation import repository_generation
 from .model import Run, RunState
 from .state import transition
@@ -21,7 +21,13 @@ class PromotionAuthority:
     def __init__(self, repo_root) -> None:
         self.repo_root = repo_root
 
-    def authorize(self, run: Run, evidence: VerificationEvidence, repo_root) -> PromotionDecision:
+    def authorize(
+        self,
+        run: Run,
+        evidence: VerificationEvidence,
+        repo_root,
+        expected_gate_set_digest: str | None = None,
+    ) -> PromotionDecision:
         current = repository_generation(repo_root).id
         if run.state is not RunState.VERIFIED:
             return PromotionDecision(False, f"run is not VERIFIED: {run.state}")
@@ -37,13 +43,12 @@ class PromotionAuthority:
             return PromotionDecision(False, "evidence epoch is stale")
         if not evidence.passed:
             return PromotionDecision(False, "verification evidence is not all PASS")
-        current_verifier = Verifier(repo_root)
-        current_definitions = tuple(
-            f"{gate.name}|{str(gate.required).lower()}|{' '.join(gate.command)}"
-            for gate in current_verifier.gates
-        )
-        if evidence.gate_set_digest != gate_set_digest(current_definitions):
+
+        if expected_gate_set_digest is None:
+            expected_gate_set_digest = Verifier(repo_root).gate_set_digest
+        if evidence.gate_set_digest != expected_gate_set_digest:
             return PromotionDecision(False, "verification gate contract changed")
+
         if not evidence.is_current(repo_root):
             return PromotionDecision(False, "repository generation changed before promotion")
         transition(run, RunState.PROMOTABLE)
