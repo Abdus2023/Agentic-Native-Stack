@@ -7,6 +7,7 @@ name = "ourob-m0"
 version = "0.1.0"
 description = "Deterministic self-hosting autonomous engineering kernel"
 requires-python = ">=3.11"
+dependencies = ["cryptography>=44,<47"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
