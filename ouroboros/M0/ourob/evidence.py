@@ -14,16 +14,6 @@ def _canonical_results(results: tuple[VerificationResult, ...]) -> bytes:
     return ("\n".join(lines) + "\n").encode("utf-8") if lines else b""
 
 
-def gate_set_digest(gate_definitions: tuple[str, ...]) -> str:
-    """Content identity of the declared gate definitions.
-
-    Each entry is a canonical ``name|required|command`` string.  The digest
-    binds verification evidence to the command contract, not just gate names.
-    """
-    canonical = "\n".join(sorted(gate_definitions)) + ("\n" if gate_definitions else "")
-    return sha256(canonical.encode("utf-8")).hexdigest()
-
-
 @dataclass(frozen=True)
 class VerificationEvidence:
     """Immutable, complete, and self-checking verification evidence."""
@@ -71,11 +61,20 @@ def capture_evidence(
     run: Run,
     results: tuple[VerificationResult, ...],
     required_gates: tuple[str, ...],
-    gate_definitions: tuple[str, ...] = (),
+    gate_contract_digest: str,
 ) -> VerificationEvidence:
-    """Freeze verifier output and bind it to the declared gate contract."""
-    gate_identity = gate_set_digest(gate_definitions)
-    evidence = VerificationEvidence(run.id, run.generation, run.verification_epoch, tuple(results), tuple(required_gates), "", gate_identity)
+    """Freeze verifier output against its already-canonicalized gate identity."""
+    if not gate_contract_digest:
+        raise ValueError("gate contract digest is required")
+    evidence = VerificationEvidence(
+        run.id,
+        run.generation,
+        run.verification_epoch,
+        tuple(results),
+        tuple(required_gates),
+        "",
+        gate_contract_digest,
+    )
     return VerificationEvidence(
         evidence.run_id,
         evidence.generation,
