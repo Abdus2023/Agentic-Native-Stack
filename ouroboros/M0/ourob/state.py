@@ -13,7 +13,7 @@ ALLOWED_TRANSITIONS: dict[RunState, frozenset[RunState]] = {
     RunState.PLANNED: frozenset({RunState.AUTHORIZED, RunState.BLOCKED}),
     RunState.AUTHORIZED: frozenset({RunState.EXECUTING, RunState.BLOCKED}),
     RunState.EXECUTING: frozenset({RunState.OBSERVED, RunState.FAILED, RunState.BLOCKED}),
-    RunState.OBSERVED: frozenset({RunState.VERIFYING}),
+    RunState.OBSERVED: frozenset({RunState.AUTHORIZED, RunState.VERIFYING}),
     RunState.VERIFYING: frozenset({RunState.VERIFIED, RunState.FAILED, RunState.BLOCKED}),
     RunState.VERIFIED: frozenset({RunState.PROMOTABLE}),
     RunState.PROMOTABLE: frozenset({RunState.PROMOTED}),
