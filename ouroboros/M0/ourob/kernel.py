@@ -86,7 +86,11 @@ class Kernel:
         report = self.verifier.verify(run.verification_epoch)
         run.verifications.extend(report.results)
         required_gates = tuple(gate.name for gate in self.verifier.gates if gate.required)
-        self.evidence = capture_evidence(run, report.results, required_gates)
+        gate_definitions = tuple(
+            f"{gate.name}|{str(gate.required).lower()}|{' '.join(gate.command)}"
+            for gate in self.verifier.gates
+        )
+        self.evidence = capture_evidence(run, report.results, required_gates, gate_definitions)
         self.journal.append(Event("VERIFICATION_STARTED", run.id, None, report.generation, {"epoch": report.epoch}))
         for result in report.results:
             self.journal.append(Event("GATE_RESULT", run.id, None, result.generation, {"gate": result.gate, "status": result.status, "evidence_id": result.evidence_id, "epoch": result.epoch}))
