@@ -86,13 +86,14 @@ class Kernel:
         report = self.verifier.verify(run.verification_epoch)
         run.verifications.extend(report.results)
         required_gates = tuple(gate.name for gate in self.verifier.gates if gate.required)
+        gate_contract_digest = self.verifier.gate_set_digest
         self.evidence = capture_evidence(
             run,
             report.results,
             required_gates,
-            self.verifier.gate_set_digest,
+            gate_contract_digest,
         )
-        self.journal.append(Event("VERIFICATION_STARTED", run.id, None, report.generation, {"epoch": report.epoch, "gate_set_digest": self.verifier.gate_set_digest}))
+        self.journal.append(Event("VERIFICATION_STARTED", run.id, None, report.generation, {"epoch": report.epoch, "gate_set_digest": gate_contract_digest}))
         for result in report.results:
             self.journal.append(Event("GATE_RESULT", run.id, None, result.generation, {"gate": result.gate, "status": result.status, "evidence_id": result.evidence_id, "epoch": result.epoch}))
         if report.generation != run.generation or not report.passed or not self.evidence.passed:
@@ -108,7 +109,13 @@ class Kernel:
         evidence = self.evidence
         if evidence is None:
             raise RuntimeError("no immutable verification evidence")
-        decision = self.promoter.authorize(run, evidence, self.repo_root)
+        assert self.verifier is not None
+        decision = self.promoter.authorize(
+            run,
+            evidence,
+            self.repo_root,
+            self.verifier.gate_set_digest,
+        )
         if not decision.allowed:
             raise RuntimeError(decision.reason)
         self.journal.append(Event("PROMOTION_AUTHORIZED", run.id, None, run.generation, {"reason": decision.reason}))
