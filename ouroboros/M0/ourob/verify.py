@@ -33,12 +33,24 @@ DEFAULT_GATES = (
 )
 
 
+def _validate_gate_set(gates: tuple[Gate, ...]) -> None:
+    names = [gate.name for gate in gates]
+    if any(not name or "\0" in name or "\n" in name for name in names):
+        raise ValueError("gate names must be non-empty and free of NUL/newline")
+    if len(names) != len(set(names)):
+        raise ValueError("duplicate gate names are not permitted")
+    for gate in gates:
+        if not gate.command or any(not isinstance(part, str) for part in gate.command):
+            raise ValueError(f"invalid command for gate: {gate.name}")
+
+
 class Verifier:
     """Deterministic gate runner whose evidence is bound to one repository generation."""
 
     def __init__(self, repo_root: Path, gates: tuple[Gate, ...] = DEFAULT_GATES) -> None:
         self.repo_root = repo_root.resolve()
-        self.gates = gates
+        self.gates = tuple(gates)
+        _validate_gate_set(self.gates)
 
     def verify(self, epoch: int) -> VerificationReport:
         generation = repository_generation(self.repo_root).id
