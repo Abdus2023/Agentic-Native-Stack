@@ -42,6 +42,17 @@ class VerificationStatus(StrEnum):
 
 
 @dataclass(frozen=True)
+class Event:
+    """Durable state-transition record written to the journal."""
+
+    kind: str
+    run_id: str
+    action_id: str | None
+    generation: str
+    payload: dict[str, Any]
+
+
+@dataclass(frozen=True)
 class Action:
     id: str
     kind: ActionKind
