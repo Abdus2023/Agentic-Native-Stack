@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-import sys
 from tempfile import TemporaryDirectory
 from uuid import uuid4
 
@@ -32,7 +31,7 @@ def test_self_extension_full_closed_loop() -> None:
 
         kernel = Kernel(
             root, PolicyEngine(), filesystem_skills(root), Journal(root / ".ourob" / "journal.jsonl"),
-            verifier=Verifier(root, (Gate("compile-skills", (sys.executable, "-m", "compileall", "-q", "skills")),)),
+            verifier=Verifier(root, (Gate("compile-skills", (__import__("sys").executable, "-m", "compileall", "-q", "skills")),)),
         )
         run = kernel.create_run("Add greet capability")
         kernel.plan(run)
@@ -49,17 +48,9 @@ def test_self_extension_full_closed_loop() -> None:
 
         boot = Bootstrap(root).load()
         assert boot.trusted
+        assert boot.registry is not None
         assert "greet" in boot.skills
-
-        # Prove the reconstructed capability executes after cold bootstrap.
-        registry = filesystem_skills(root)
-        import importlib
-        sys.path.insert(0, str(root))
-        try:
-            importlib.import_module("skills.greet").register(registry, name="greet")
-        finally:
-            sys.path.remove(str(root))
-        observation = registry.execute(Action(uuid4().hex, ActionKind.EXECUTE, "greet", {"name": "World"}))
+        observation = boot.registry.execute(Action(uuid4().hex, ActionKind.EXECUTE, "greet", {"name": "World"}))
         assert observation.ok
         assert observation.result == "Hello, World!"
 
@@ -69,3 +60,23 @@ def test_protected_surface_is_denied_by_policy() -> None:
     action = Action(uuid4().hex, ActionKind.WRITE, "filesystem.write", {"path": "ourob/kernel.py", "content": "# attack"})
     decision = policy.evaluate(action)
     assert not decision.allowed
+
+
+def test_bootstrap_rejects_external_module() -> None:
+    with TemporaryDirectory() as directory:
+        root = Path(directory)
+        (root / "policies").mkdir()
+        (root / "verification").mkdir()
+        (root / "skills").mkdir()
+        (root / "policies" / "constitution.json").write_text(
+            '{"schema":"ourob.constitution.v1","mode":"fail_closed","invariants":[]}', encoding="utf-8"
+        )
+        (root / "verification" / "gates.json").write_text(
+            '{"schema":"ourob.gates.v1","gates":[{"name":"compile","command":["python","-m","compileall","-q","skills"],"required":true}]}', encoding="utf-8"
+        )
+        (root / "skills" / "manifest.json").write_text(
+            '{"skills":[{"name":"bad","module":"../outside"}]}', encoding="utf-8"
+        )
+        boot = Bootstrap(root).load()
+        assert not boot.trusted
+        assert "module" in boot.reason
