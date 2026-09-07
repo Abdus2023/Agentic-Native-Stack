@@ -40,6 +40,26 @@ Therefore:
 
 Promotion compares the evidence's gate-set digest with the current kernel verifier's digest and fails closed on mismatch.
 
+## M1.3 — Crash recovery authority boundary
+
+The journal is an integrity-checked, hash-chained JSONL history. Recovery is a **reconstruction authority boundary**, not a state inference engine.
+
+The normative invariant is:
+
+> **No durable event → no recovered authority.**
+
+In particular:
+
+- `AUTHORIZED` requires a durable `AUTHORIZATION_GRANTED` event following durable `PLANNED` state;
+- `VERIFIED` requires a durable `VERIFICATION_EVIDENCE_CAPTURED` event containing complete, digest-valid evidence;
+- `GATE_RESULT` records alone never imply `VERIFIED`;
+- `PROMOTABLE` requires durable `PROMOTION_AUTHORIZED` bound to the recovered evidence digest and gate-contract digest; and
+- `PROMOTED` requires durable `PROMOTED` following that promotion authorization.
+
+Verification evidence is serialized completely in the capture event so a crashed process can reconstruct the same immutable evidence rather than trusting an in-memory object that disappeared with the process. Any malformed, tampered, incomplete, stale, cross-run, or incorrectly ordered privileged record causes recovery to fail closed.
+
+Repeated mutation after `OBSERVED` also emits a new durable `AUTHORIZATION_GRANTED` event before execution. Recovery therefore never interprets `ACTION_EXECUTED` as implicit authorization.
+
 ## Required M0 proof
 
 1. Cold bootstrap from repository state.
@@ -55,6 +75,6 @@ Promotion compares the evidence's gate-set digest with the current kernel verifi
 
 ## M1 direction
 
-M1 extends the in-process lifecycle with durable journal replay and crash recovery. Recovery may reconstruct only state that is supported by durable events; it may never manufacture authorization, verification, or promotion that was not durably recorded.
+M1 extends the in-process lifecycle with durable journal replay and crash recovery. M1.3 establishes the authority boundary: recovery may reconstruct only state that is supported by explicit durable authorization/evidence events; it may never manufacture authorization, verification, or promotion from informational observations.
 
 This M0 artifact is intentionally placed under the existing Agentic-Native-Stack repository as an architecture/implementation seed; it is not yet the executable package until the implementation slice is committed.
