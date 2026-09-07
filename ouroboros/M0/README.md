@@ -72,9 +72,23 @@ The journal append operation is serialized with an inter-process exclusive lock 
 
 A blank or malformed record is corruption, not an ignorable tail. Recovery and subsequent appends therefore fail closed rather than silently skipping damaged history.
 
-The journal's hash chain provides **integrity evidence**, not independent authenticity: an actor capable of rewriting the entire journal can recompute the chain. A future anchored journal root or external trust store is required for tamper resistance against such an actor.
-
 On platforms without the required inter-process locking primitive, append fails closed rather than pretending that concurrent append serialization exists.
+
+## M1.5 — External journal trust anchor
+
+M1.4 proves crash durability and hash-chain consistency, but a hash chain beginning at a public all-zero genesis does not establish authenticity: an attacker who can rewrite the complete journal can recompute every digest.
+
+M1.5 introduces `JournalTrustAnchor`, a pre-provisioned checkpoint held outside the mutable journal. A trusted read requires both ordinary journal validation and an exact match against the external checkpoint.
+
+The anchor binds:
+
+1. the checkpoint sequence;
+2. the checkpoint digest; and
+3. optionally, the repository generation at that checkpoint.
+
+A whole-history rewrite, truncation before the checkpoint, or generation mismatch is rejected. The runtime does **not** create, rotate, or replace an anchor during recovery. Anchor provisioning and storage are therefore part of the deployment trust boundary, not repository-derived authority.
+
+This is a checkpoint authenticity boundary, not a complete key-management system. If an attacker can also replace the external anchor, the anchor provides no protection; M1.6 can add signed checkpoints/key lifecycle as the next trust layer.
 
 ## Required M0 proof
 
@@ -91,6 +105,6 @@ On platforms without the required inter-process locking primitive, append fails 
 
 ## M1 direction
 
-M1 extends the in-process lifecycle with durable journal replay and crash recovery. M1.3 establishes the authority boundary and M1.4 establishes append durability; neither treats a hash chain as an authenticity anchor.
+M1 extends the in-process lifecycle with durable journal replay and crash recovery. M1.3 establishes the authority boundary, M1.4 establishes append durability, and M1.5 establishes an external checkpoint trust boundary.
 
 This M0 artifact is intentionally placed under the existing Agentic-Native-Stack repository as an architecture/implementation seed; it is not yet the executable package until the implementation slice is committed.
