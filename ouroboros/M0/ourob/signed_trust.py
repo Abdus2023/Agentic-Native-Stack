@@ -183,12 +183,14 @@ class TrustStore:
                 return key
         raise SignatureVerificationError("unknown trust key")
 
-    def verify(self, checkpoint: SignedCheckpoint, backend: SignatureBackend) -> None:
+    def verify(self, checkpoint: SignedCheckpoint, backend: SignatureBackend, *, historical: bool = False) -> None:
         if checkpoint.algorithm != SUPPORTED_ALGORITHM:
             raise SignatureVerificationError("unknown signature algorithm")
         key = self.key(checkpoint.key_id)
         if key.state is TrustKeyState.REVOKED:
             raise SignatureVerificationError("trust key is revoked")
+        if key.state is TrustKeyState.RETIRED and not historical:
+            raise SignatureVerificationError("retired trust key is historical-only")
         backend.verify(key.public_key, checkpoint.signing_bytes(), checkpoint.signature)
 
     def with_rotation(self, new_key: TrustKey) -> "TrustStore":
