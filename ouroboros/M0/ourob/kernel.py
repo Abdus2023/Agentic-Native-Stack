@@ -52,8 +52,13 @@ class Kernel:
         self.journal.append(Event("AUTHORIZATION_GRANTED", run.id, None, run.generation, {}))
 
     def execute(self, run: Run, action: Action) -> Observation:
-        if run.state is not RunState.AUTHORIZED:
-            raise RuntimeError(f"mutation gateway requires AUTHORIZED run, got {run.state}")
+        if run.state not in {RunState.AUTHORIZED, RunState.OBSERVED}:
+            raise RuntimeError(f"mutation gateway requires AUTHORIZED/OBSERVED run, got {run.state}")
+        if run.state is RunState.OBSERVED:
+            # Continuation is explicit and kernel-controlled. This permits a
+            # single planned run to perform multiple actions without allowing
+            # callers to bypass the lifecycle or verification boundary.
+            transition(run, RunState.AUTHORIZED)
         self.journal.append(Event("ACTION_PROPOSED", run.id, action.id, run.generation, {"kind": action.kind, "skill": action.skill}))
         decision = self.policy.evaluate(action)
         if not decision.allowed:
