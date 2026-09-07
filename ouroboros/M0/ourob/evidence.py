@@ -9,43 +9,41 @@ from .model import Run, VerificationResult, VerificationStatus
 
 def _canonical_results(results: tuple[VerificationResult, ...]) -> bytes:
     lines = []
-    for result in results:
-        lines.append(
-            "\0".join(
-                (
-                    result.gate,
-                    result.status.value,
-                    result.evidence_id,
-                    result.generation,
-                    str(result.epoch),
-                    result.message,
-                )
-            )
-        )
+    for result in sorted(results, key=lambda item: item.gate):
+        lines.append("\0".join((result.gate, result.status.value, result.evidence_id, result.generation, str(result.epoch), result.message)))
     return ("\n".join(lines) + "\n").encode("utf-8") if lines else b""
 
 
 @dataclass(frozen=True)
 class VerificationEvidence:
-    """Immutable verification evidence with a self-checking content digest."""
+    """Immutable, complete, and self-checking verification evidence."""
 
     run_id: str
     generation: str
     epoch: int
     results: tuple[VerificationResult, ...]
+    required_gates: tuple[str, ...]
     digest: str
 
     @property
     def passed(self) -> bool:
-        return bool(self.results) and all(
-            result.status is VerificationStatus.PASS
-            and result.generation == self.generation
-            and result.epoch == self.epoch
-            for result in self.results
+        required = tuple(sorted(set(self.required_gates)))
+        actual = tuple(sorted(result.gate for result in self.results))
+        return (
+            bool(required)
+            and actual == required
+            and len(actual) == len(set(actual))
+            and all(
+                result.status is VerificationStatus.PASS
+                and result.generation == self.generation
+                and result.epoch == self.epoch
+                for result in self.results
+            )
         )
 
     def canonical_bytes(self) -> bytes:
-        header = f"{self.run_id}\0{self.generation}\0{self.epoch}\0".encode("utf-8")
+        gates = "\0".join(sorted(self.required_gates))
+        header = f"{self.run_id}\0{self.generation}\0{self.epoch}\0{gates}\0".encode("utf-8")
         return header + _canonical_results(self.results)
 
     def recompute_digest(self) -> str:
@@ -58,19 +56,7 @@ class VerificationEvidence:
         return repository_generation(repo_root).id == self.generation
 
 
-def capture_evidence(run: Run, results: tuple[VerificationResult, ...]) -> VerificationEvidence:
-    """Freeze verifier output and compute its canonical content digest."""
-    evidence = VerificationEvidence(
-        run_id=run.id,
-        generation=run.generation,
-        epoch=run.verification_epoch,
-        results=tuple(results),
-        digest="",
-    )
-    return VerificationEvidence(
-        run_id=evidence.run_id,
-        generation=evidence.generation,
-        epoch=evidence.epoch,
-        results=evidence.results,
-        digest=evidence.recompute_digest(),
-    )
+def capture_evidence(run: Run, results: tuple[VerificationResult, ...], required_gates: tuple[str, ...]) -> VerificationEvidence:
+    """Freeze verifier output and bind it to the declared required gate set."""
+    evidence = VerificationEvidence(run.id, run.generation, run.verification_epoch, tuple(results), tuple(required_gates), "")
+    return VerificationEvidence(evidence.run_id, evidence.generation, evidence.epoch, evidence.results, evidence.required_gates, evidence.recompute_digest())
