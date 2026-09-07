@@ -2,10 +2,11 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from .evidence import VerificationEvidence
+from .evidence import VerificationEvidence, gate_set_digest
 from .generation import repository_generation
 from .model import Run, RunState
 from .state import transition
+from .verify import Verifier
 
 
 @dataclass(frozen=True)
@@ -16,6 +17,9 @@ class PromotionDecision:
 
 class PromotionAuthority:
     """The only M0 component allowed to authorize PROMOTED."""
+
+    def __init__(self, repo_root) -> None:
+        self.repo_root = repo_root
 
     def authorize(self, run: Run, evidence: VerificationEvidence, repo_root) -> PromotionDecision:
         current = repository_generation(repo_root).id
@@ -33,6 +37,13 @@ class PromotionAuthority:
             return PromotionDecision(False, "evidence epoch is stale")
         if not evidence.passed:
             return PromotionDecision(False, "verification evidence is not all PASS")
+        current_verifier = Verifier(repo_root)
+        current_definitions = tuple(
+            f"{gate.name}|{str(gate.required).lower()}|{' '.join(gate.command)}"
+            for gate in current_verifier.gates
+        )
+        if evidence.gate_set_digest != gate_set_digest(current_definitions):
+            return PromotionDecision(False, "verification gate contract changed")
         if not evidence.is_current(repo_root):
             return PromotionDecision(False, "repository generation changed before promotion")
         transition(run, RunState.PROMOTABLE)
