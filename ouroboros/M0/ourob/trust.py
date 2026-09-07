@@ -1,12 +1,13 @@
 """External trust anchors for journal authenticity.
 
-A journal hash chain proves consistency only relative to its genesis.  A
-trusted checkpoint pins a prefix to an authority outside the mutable journal.
-The runtime never creates or replaces that anchor during recovery.
+A journal hash chain proves consistency only relative to its genesis. A trusted
+checkpoint pins a prefix to an authority outside the mutable journal. The
+runtime never creates or replaces that anchor during recovery.
 """
 
 from __future__ import annotations
 
+import json
 from dataclasses import dataclass
 from hashlib import sha256
 from typing import Any, Mapping
@@ -61,10 +62,7 @@ class JournalTrustAnchor:
         return sha256(payload).hexdigest()
 
 
-def verify_trust_anchor(
-    records: list[dict[str, Any]],
-    anchor: JournalTrustAnchor,
-) -> None:
+def verify_trust_anchor(records: list[dict[str, Any]], anchor: JournalTrustAnchor) -> None:
     """Verify that the journal contains the exact externally trusted prefix."""
     if not records:
         raise JournalIntegrityError("trusted journal is empty")
@@ -77,9 +75,6 @@ def verify_trust_anchor(
     if checkpoint.get("digest") != anchor.digest:
         raise JournalIntegrityError("trusted checkpoint digest mismatch")
 
-    # The anchor is a prefix checkpoint, so all records through it must still
-    # satisfy the ordinary chain invariants.  This also rejects a rewritten
-    # prefix whose final digest was somehow made to look plausible.
     previous = GENESIS
     for index, record in enumerate(records[: anchor.sequence], 1):
         if record.get("version") != JOURNAL_VERSION:
@@ -92,11 +87,10 @@ def verify_trust_anchor(
         if not isinstance(digest, str):
             raise JournalIntegrityError(f"invalid trusted journal digest at record {index}")
         unsigned = {key: value for key, value in record.items() if key != "digest"}
-        if digest != sha256(__import__("json").dumps(unsigned, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode("utf-8")).hexdigest():
+        canonical = json.dumps(unsigned, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode("utf-8")
+        if digest != sha256(canonical).hexdigest():
             raise JournalIntegrityError(f"invalid trusted journal digest at record {index}")
         previous = digest
 
-    if anchor.generation:
-        generation = checkpoint.get("generation")
-        if generation != anchor.generation:
-            raise JournalIntegrityError("trusted checkpoint generation mismatch")
+    if anchor.generation and checkpoint.get("generation") != anchor.generation:
+        raise JournalIntegrityError("trusted checkpoint generation mismatch")
