@@ -4,6 +4,7 @@ from dataclasses import dataclass
 import importlib
 import json
 from pathlib import Path
+import sys
 
 from .generation import repository_generation
 from .policy import PolicyEngine
@@ -50,12 +51,25 @@ class Bootstrap:
         if manifest.exists():
             try:
                 data = json.loads(manifest.read_text(encoding="utf-8"))
-                for entry in data.get("skills", []):
-                    module = str(entry["module"])
-                    name = str(entry["name"])
-                    imported = importlib.import_module(module)
-                    register = getattr(imported, "register")
-                    register(registry, name=name)
+                if not isinstance(data, dict) or not isinstance(data.get("skills"), list):
+                    raise ValueError("invalid skill manifest")
+                added_path = False
+                root_text = str(self.repo_root)
+                if root_text not in sys.path:
+                    sys.path.insert(0, root_text)
+                    added_path = True
+                try:
+                    for entry in data["skills"]:
+                        if not isinstance(entry, dict):
+                            raise ValueError("invalid skill manifest entry")
+                        module = str(entry["module"])
+                        name = str(entry["name"])
+                        imported = importlib.import_module(module)
+                        register = getattr(imported, "register")
+                        register(registry, name=name)
+                finally:
+                    if added_path:
+                        sys.path.remove(root_text)
             except (OSError, KeyError, TypeError, ValueError, ImportError, AttributeError, json.JSONDecodeError) as exc:
                 return BootstrapResult(generation, False, (), f"skill bootstrap failed: {exc}")
         return BootstrapResult(generation, True, registry.names(), "repository-declared runtime reconstructed")
