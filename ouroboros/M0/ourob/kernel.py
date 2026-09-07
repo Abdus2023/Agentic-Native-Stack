@@ -4,9 +4,10 @@ from dataclasses import dataclass
 from pathlib import Path
 from uuid import uuid4
 
+from .evidence import VerificationEvidence, capture_evidence
 from .generation import repository_generation
 from .journal import Journal
-from .model import Action, Event, Observation, Run, RunState, VerificationResult, VerificationStatus
+from .model import Action, Event, Observation, Run, RunState, VerificationResult
 from .policy import PolicyEngine
 from .promotion import PromotionAuthority
 from .skills import SkillRegistry
@@ -22,6 +23,7 @@ class Kernel:
     journal: Journal
     verifier: Verifier | None = None
     promoter: PromotionAuthority | None = None
+    evidence: VerificationEvidence | None = None
 
     def __post_init__(self) -> None:
         self.repo_root = self.repo_root.resolve()
@@ -55,10 +57,8 @@ class Kernel:
         if run.state not in {RunState.AUTHORIZED, RunState.OBSERVED}:
             raise RuntimeError(f"mutation gateway requires AUTHORIZED/OBSERVED run, got {run.state}")
         if run.state is RunState.OBSERVED:
-            # Continuation is explicit and kernel-controlled. This permits a
-            # single planned run to perform multiple actions without allowing
-            # callers to bypass the lifecycle or verification boundary.
             transition(run, RunState.AUTHORIZED)
+        self.evidence = None
         self.journal.append(Event("ACTION_PROPOSED", run.id, action.id, run.generation, {"kind": action.kind, "skill": action.skill}))
         decision = self.policy.evaluate(action)
         if not decision.allowed:
@@ -85,10 +85,12 @@ class Kernel:
         assert self.verifier is not None
         report = self.verifier.verify(run.verification_epoch)
         run.verifications.extend(report.results)
+        self.evidence = capture_evidence(run, report.results)
         self.journal.append(Event("VERIFICATION_STARTED", run.id, None, report.generation, {"epoch": report.epoch}))
         for result in report.results:
             self.journal.append(Event("GATE_RESULT", run.id, None, result.generation, {"gate": result.gate, "status": result.status, "evidence_id": result.evidence_id, "epoch": result.epoch}))
         if report.generation != run.generation or not report.passed:
+            self.evidence = None
             transition(run, RunState.FAILED)
         else:
             transition(run, RunState.VERIFIED)
@@ -97,7 +99,10 @@ class Kernel:
     def promote(self, run: Run) -> None:
         if self.promoter is None:
             raise RuntimeError("promotion authority unavailable")
-        decision = self.promoter.authorize(run, tuple(run.verifications), self.repo_root)
+        evidence = self.evidence
+        if evidence is None:
+            raise RuntimeError("no immutable verification evidence")
+        decision = self.promoter.authorize(run, evidence, self.repo_root)
         if not decision.allowed:
             raise RuntimeError(decision.reason)
         self.journal.append(Event("PROMOTION_AUTHORIZED", run.id, None, run.generation, {"reason": decision.reason}))
