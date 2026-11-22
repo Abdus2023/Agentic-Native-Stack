@@ -1,0 +1,245 @@
+{
+  "schema_version": "1.0.0",
+  "workspace_id": "agentic-native-stack-skills",
+  "repository": "Abdus2023/Agentic-Native-Stack",
+  "branch": "main",
+  "nodes": [
+    {
+      "id": "skill-creator",
+      "kind": "skill",
+      "path": ".agent/skills/skill-creator/SKILL.md"
+    },
+    {
+      "id": "agentic-terminal-runtime-engineering",
+      "kind": "skill",
+      "path": ".agent/skills/agentic-terminal-runtime-engineering/SKILL.md"
+    },
+    {
+      "id": "agentic-permission-and-execution-governance",
+      "kind": "skill",
+      "path": ".agent/skills/agentic-permission-and-execution-governance/SKILL.md"
+    },
+    {
+      "id": "ouroboros-evidence-boundary-engineering",
+      "kind": "skill",
+      "path": ".agent/skills/ouroboros-evidence-boundary-engineering/SKILL.md"
+    },
+    {
+      "id": "validate-skill",
+      "kind": "tool",
+      "path": ".agent/tools/validate_skill.py"
+    },
+    {
+      "id": "validate-skill-test",
+      "kind": "test",
+      "path": ".agent/tests/test_validate_skill.py"
+    },
+    {
+      "id": "agentic-terminal-runtime-implementation",
+      "kind": "workflow",
+      "path": ".agent/workflows/agentic-terminal-runtime-implementation.md"
+    },
+    {
+      "id": "ouroboros-m0-evidence-lifecycle",
+      "kind": "workflow",
+      "path": ".agent/workflows/ouroboros-m0-evidence-lifecycle.md"
+    },
+    {
+      "id": "skill-engineering-standard",
+      "kind": "standard",
+      "path": ".agent/standards/skill-engineering-standard-v1.md"
+    },
+    {
+      "id": "agentic-architecture-spec",
+      "kind": "specification",
+      "path": "docs/agentic-native-stack.md"
+    },
+    {
+      "id": "ouroboros-m0-contract",
+      "kind": "specification",
+      "path": "ouroboros/M0/README.md"
+    },
+    {
+      "id": "rust-agent-core",
+      "kind": "module",
+      "path": "rust/agentic-core/crates/agentic-agent-core/src/agent.rs"
+    },
+    {
+      "id": "rust-agent-permission",
+      "kind": "module",
+      "path": "rust/agentic-core/crates/agentic-agent-core/src/permission.rs"
+    },
+    {
+      "id": "rust-agent-tool",
+      "kind": "module",
+      "path": "rust/agentic-core/crates/agentic-agent-core/src/tool.rs"
+    },
+    {
+      "id": "rust-event-bus",
+      "kind": "module",
+      "path": "rust/agentic-core/crates/agentic-event/src/bus.rs"
+    },
+    {
+      "id": "rust-session",
+      "kind": "module",
+      "path": "rust/agentic-core/crates/agentic-session/src/session.rs"
+    },
+    {
+      "id": "rust-pty",
+      "kind": "module",
+      "path": "rust/agentic-core/crates/agentic-pty/src/child.rs"
+    },
+    {
+      "id": "rust-ssh",
+      "kind": "module",
+      "path": "rust/agentic-core/crates/agentic-ssh/src/channel.rs"
+    },
+    {
+      "id": "ouroboros-kernel",
+      "kind": "module",
+      "path": "ouroboros/M0/ourob/kernel.py"
+    },
+    {
+      "id": "ouroboros-journal",
+      "kind": "module",
+      "path": "ouroboros/M0/ourob/journal.py"
+    },
+    {
+      "id": "ouroboros-recovery",
+      "kind": "module",
+      "path": "ouroboros/M0/ourob/recovery.py"
+    },
+    {
+      "id": "ouroboros-verifier",
+      "kind": "module",
+      "path": "ouroboros/M0/ourob/verify.py"
+    },
+    {
+      "id": "ouroboros-promotion",
+      "kind": "module",
+      "path": "ouroboros/M0/ourob/promotion.py"
+    },
+    {
+      "id": "ouroboros-signed-trust",
+      "kind": "module",
+      "path": "ouroboros/M0/ourob/signed_trust.py"
+    }
+  ],
+  "edges": [
+    {
+      "from": "skill-creator",
+      "to": "agentic-terminal-runtime-engineering",
+      "relation": "authors"
+    },
+    {
+      "from": "skill-creator",
+      "to": "agentic-permission-and-execution-governance",
+      "relation": "authors"
+    },
+    {
+      "from": "skill-creator",
+      "to": "ouroboros-evidence-boundary-engineering",
+      "relation": "authors"
+    },
+    {
+      "from": "agentic-architecture-spec",
+      "to": "agentic-terminal-runtime-engineering",
+      "relation": "source-for"
+    },
+    {
+      "from": "agentic-architecture-spec",
+      "to": "agentic-permission-and-execution-governance",
+      "relation": "source-for"
+    },
+    {
+      "from": "ouroboros-m0-contract",
+      "to": "ouroboros-evidence-boundary-engineering",
+      "relation": "source-for"
+    },
+    {
+      "from": "agentic-terminal-runtime-implementation",
+      "to": "agentic-terminal-runtime-engineering",
+      "relation": "uses"
+    },
+    {
+      "from": "agentic-terminal-runtime-implementation",
+      "to": "agentic-permission-and-execution-governance",
+      "relation": "uses"
+    },
+    {
+      "from": "ouroboros-m0-evidence-lifecycle",
+      "to": "ouroboros-evidence-boundary-engineering",
+      "relation": "uses"
+    },
+    {
+      "from": "agentic-terminal-runtime-engineering",
+      "to": "rust-agent-core",
+      "relation": "implemented-by"
+    },
+    {
+      "from": "agentic-permission-and-execution-governance",
+      "to": "rust-agent-permission",
+      "relation": "implemented-by"
+    },
+    {
+      "from": "agentic-permission-and-execution-governance",
+      "to": "rust-agent-tool",
+      "relation": "implemented-by"
+    },
+    {
+      "from": "agentic-terminal-runtime-engineering",
+      "to": "rust-event-bus",
+      "relation": "implemented-by"
+    },
+    {
+      "from": "agentic-terminal-runtime-engineering",
+      "to": "rust-session",
+      "relation": "implemented-by"
+    },
+    {
+      "from": "agentic-terminal-runtime-engineering",
+      "to": "rust-pty",
+      "relation": "implemented-by"
+    },
+    {
+      "from": "agentic-terminal-runtime-engineering",
+      "to": "rust-ssh",
+      "relation": "implemented-by"
+    },
+    {
+      "from": "ouroboros-evidence-boundary-engineering",
+      "to": "ouroboros-kernel",
+      "relation": "implemented-by"
+    },
+    {
+      "from": "ouroboros-evidence-boundary-engineering",
+      "to": "ouroboros-journal",
+      "relation": "implemented-by"
+    },
+    {
+      "from": "ouroboros-evidence-boundary-engineering",
+      "to": "ouroboros-recovery",
+      "relation": "implemented-by"
+    },
+    {
+      "from": "ouroboros-evidence-boundary-engineering",
+      "to": "ouroboros-verifier",
+      "relation": "implemented-by"
+    },
+    {
+      "from": "ouroboros-evidence-boundary-engineering",
+      "to": "ouroboros-promotion",
+      "relation": "implemented-by"
+    },
+    {
+      "from": "ouroboros-evidence-boundary-engineering",
+      "to": "ouroboros-signed-trust",
+      "relation": "implemented-by"
+    },
+    {
+      "from": "validate-skill-test",
+      "to": "validate-skill",
+      "relation": "tests"
+    }
+  ]
+}
