@@ -1,0 +1,40 @@
+{
+  "schema_version": "1.0.0",
+  "workspace_id": "agentic-native-stack-skills",
+  "repository": "Abdus2023/Agentic-Native-Stack",
+  "branch": "main",
+  "authority": "architecture-and-execution-governance-only",
+  "skills": [
+    {
+      "id": "skill-creator",
+      "path": "skills/skill-creator/SKILL.md",
+      "status": "DRAFT"
+    },
+    {
+      "id": "agentic-terminal-runtime-engineering",
+      "path": "skills/agentic-terminal-runtime-engineering/SKILL.md",
+      "status": "DRAFT"
+    },
+    {
+      "id": "agentic-permission-and-execution-governance",
+      "path": "skills/agentic-permission-and-execution-governance/SKILL.md",
+      "status": "DRAFT"
+    },
+    {
+      "id": "ouroboros-evidence-boundary-engineering",
+      "path": "skills/ouroboros-evidence-boundary-engineering/SKILL.md",
+      "status": "DRAFT"
+    }
+  ],
+  "tools": [
+    {
+      "id": "validate-skill",
+      "path": "tools/validate_skill.py",
+      "status": "DRAFT"
+    }
+  ],
+  "workflows": [
+    "workflows/agentic-terminal-runtime-implementation.md",
+    "workflows/ouroboros-m0-evidence-lifecycle.md"
+  ]
+}
